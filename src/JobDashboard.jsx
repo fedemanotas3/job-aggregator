@@ -47,7 +47,12 @@ function computeLiveMatchScore(cvText, job) {
   const tokenize = (t) =>
     new Set((t.toLowerCase().match(/[a-záéíóúñ]{3,}/g) || []));
   const cvWords = tokenize(cvText);
-  const jobWords = tokenize(`${job.title} ${(job.tags || []).join(" ")} ${job.description || ""}`);
+const safeTags = Array.isArray(job.tags) 
+  ? job.tags.join(" ") 
+  : typeof job.tags === 'string' 
+    ? job.tags 
+    : "";
+const jobWords = tokenize(`${job.title || ""} ${safeTags} ${job.description || ""}`);
   if (cvWords.size === 0 || jobWords.size === 0) return job.match_score ?? null;
   let overlap = 0;
   jobWords.forEach((w) => {
