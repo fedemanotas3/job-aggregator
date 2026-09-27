@@ -1,0 +1,47 @@
+name: Actualizar vacantes (cada 20 min)
+
+on:
+  schedule:
+    # GitHub Actions no garantiza el minuto exacto en el tier gratis; trátalo
+    # como "cada ~20 min", no como un reloj preciso.
+    - cron: "*/20 * * * *"
+  workflow_dispatch: {}   # permite correrlo manualmente desde la pestaña Actions
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    # IMPORTANTE: este workflow corre gratis e ilimitado en runners estándar
+    # SOLO si el repositorio es público. En un repo privado consume los
+    # minutos incluidos de tu plan de GitHub (limitados).
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt --break-system-packages || pip install -r requirements.txt
+
+      - name: Correr el agregador
+        # OJO: a propósito NO se pasa --cv aquí. Tu CV vive solo en el
+        # localStorage de tu navegador (ver JobDashboard.jsx) y el Match %
+        # que ve el usuario se recalcula ahí mismo; así evitas subir tu CV en
+        # texto plano a un repo que probablemente sea público (necesario
+        # para que el Actions gratis no tenga límite de minutos). Si de
+        # verdad quieres el match_score calculado con TF-IDF en el backend,
+        # agrega --cv cv_base.txt aquí, pero entonces usa un repo PRIVADO.
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+        run: python scraper_aggregator.py --out public/jobs_data.json
+
+      - name: Commitear jobs_data.json actualizado
+        run: |
+          git config user.name "job-aggregator-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/jobs_data.json source_cache.json
+          git diff --cached --quiet || git commit -m "chore: actualizar vacantes [skip ci]"
+          git push
