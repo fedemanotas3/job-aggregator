@@ -101,15 +101,18 @@ function JobCard({ job, cvText, onAdaptCV, onGenerateLetter }) {
         )}
         {job.region === "japan" && (
           <span className="rounded bg-rose-50 px-2 py-1 text-rose-700">🗾 Japón</span>
-        )}{(Array.isArray(job.tags) 
-  ? job.tags 
-  : typeof job.tags === 'string' 
-    ? job.tags.split(',') 
+        )}
+       {(Array.isArray(job.tags)
+  ? job.tags
+  : typeof job.tags === 'string'
+    ? job.tags.split(',')
     : []
 ).slice(0, 4).map((tag, idx) => (
-          <span key={t} className="rounded bg-slate-50 px-2 py-1 text-slate-500 border border-slate-200">{t}</span>
-        ))}
-      </div>
+  <span key={idx} className="rounded bg-slate-50 px-2 py-1 text-slate-500 border border-slate-200">
+    {typeof tag === 'string' ? tag.trim() : String(tag)}
+  </span>
+))}
+</div>
 
       <div className="mt-4 flex gap-2">
         <a
